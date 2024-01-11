@@ -100,10 +100,15 @@
         }
 
         .action-text,
-        .points-text {
+        .points-text,
+        .fail-text {
             color: #008000;
             font-size: 18px;
             font-weight: bold;
+        }
+
+        .fail-text {
+            color: #ff2424;
         }
     </style>
 
@@ -129,6 +134,7 @@
                 <div id="hands">
                     <div class="hand">
                         <div class="action-text"></div>
+                        <div class="fail-text"></div>
                         <div class="hand-container">
                             <!-- Cards will be added here -->
                         </div>
@@ -226,7 +232,6 @@
             }
         }
 
-
         function createHandContainer(cards) {
             const newHand = document.createElement('div');
             newHand.className = 'hand';
@@ -299,6 +304,7 @@
                 if (hand.id !== 'dealerHand') {
                     const playerCards = Array.from(hand.querySelectorAll('.card')).map(card => card.textContent);
                     const actionText = hand.querySelector('.action-text');
+                    const failText = hand.querySelector('.fail-text');
                     const pointsText = hand.querySelector('.points-text');
 
                     const total = calculateHandTotal(playerCards);
@@ -308,9 +314,16 @@
 
                     if (dealerCard && playerCards.length) {
                         const action = calculateBestAction(dealerCard, playerCards);
-                        actionText.textContent = action;
+                        if (total > 21) {
+                            failText.textContent = action;
+                            actionText.textContent = "";
+                        } else {
+                            actionText.textContent = action;
+                            failText.textContent = "";
+                        }
                     } else {
-                        actionText.textContent = '';
+                        actionText.textContent = "";
+                        failText.textContent = "";
                     }
                 }
             });
