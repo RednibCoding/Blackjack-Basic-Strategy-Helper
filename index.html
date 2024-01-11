@@ -200,8 +200,6 @@
             const cardClone = card.cloneNode(true);
             cardClone.onclick = function () { this.remove(); updateAction(); updateSplitButtonVisibility(e.target); };
 
-            // Find the cards-container within the hand
-            // const handContainer = e.target.querySelector('.hand-container') || e.target;
             handContainer.appendChild(cardClone);
 
             updateAction();
