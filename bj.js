@@ -3,6 +3,10 @@ function calculateBestAction(dealerCard, playerCards) {
     const playerTotal = calculateHandTotal(playerCards);
     const soft = isHandSoft(playerCards);
 
+    if (playerTotal > 21) {
+        return "BUST"
+    }
+
     // Handle pair splitting scenarios
     if (isPair(playerCards)) {
         const cardValue = getCardValue(playerCards[0]); // Both cards have the same value in a pair

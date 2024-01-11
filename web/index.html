@@ -250,6 +250,10 @@
             splitButton.onclick = function () { splitHand(this); };
             newHand.appendChild(splitButton);
 
+            const pointsText = document.createElement("div");
+            pointsText.className = "points-text";
+            newHand.appendChild(pointsText);
+
             // Set up event listeners for the new hand
             newHand.addEventListener('dragover', handleDragOver);
             newHand.addEventListener('drop', function (e) {
