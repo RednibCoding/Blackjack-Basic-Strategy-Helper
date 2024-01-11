@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Blackjack Basic Strategy Helper</title>
+    <style>
+        body,
+        html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .main {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .main-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game-container {
+            text-align: center;
+            border: 1px solid black;
+            padding: 20px;
+            margin-right: 10px;
+        }
+
+        .draggable-cards {
+            width: 200px;
+            text-align: center;
+            border: 1px solid black;
+            padding: 10px;
+        }
+
+        .hand {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 1px solid black;
+            padding: 10px;
+            min-height: 120px;
+            margin: 10px 0;
+            width: 300px;
+        }
+
+        .hand-container {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .cards {
+            width: 150px;
+            text-align: center;
+            border: 1px solid black;
+            padding: 10px;
+            position: absolute;
+            right: 10px;
+            top: 10px;
+        }
+
+        .card {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            width: 40px;
+            height: 80px;
+            padding: 10px;
+            border: 1px solid grey;
+            border-radius: 6px;
+            cursor: move;
+            background-color: white;
+            margin: 5px 2px;
+            font-size: 30px;
+            font-weight: bold;
+        }
+
+        .dragging {
+            opacity: 1.0;
+        }
+
+        #reset-button {
+            width: 200px;
+            height: 40px;
+        }
+
+        .split-btn {
+            width: 100px;
+            padding: 5px;
+        }
+
+        .action-text {
+            color: #008000;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+
+    <script defer src="bj.js"></script>
+</head>
+
+<body>
+    <div class="main">
+
+        <h1>Blackjack Basic Strategy Helper</h1>
+        <h3>Drag a card to a hand. Left click on a card to remove it.</h3>
+        <div class="main-container">
+            <div class="game-container">
+
+                <h3>Dealer's Hand</h3>
+                <div class="hand">
+                    <div id="dealerHand" class="hand-container">
+
+                    </div>
+                </div>
+
+                <h3>Player's Hand</h3>
+                <div id="hands">
+                    <div class="hand">
+                        <div class="action-text"></div>
+                        <div class="hand-container">
+                            <!-- Cards will be added here -->
+                        </div>
+                        <button class="split-btn" style="display: none;" onclick="splitHand(this)">Split</button>
+                    </div>
+                </div>
+
+                <button id="reset-button" onclick="resetGame()">reset</button>
+            </div>
+
+            <div class="draggable-cards">
+                <h3>Drag a Card:</h3>
+                <!-- Generate card elements -->
+                <script>
+                    const cardValues = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+                    const cardsContainer = document.querySelector('.draggable-cards');
+
+                    cardValues.forEach(value => {
+                        let card = document.createElement('div');
+                        card.id = value;
+                        card.className = 'card';
+                        card.textContent = value;
+                        card.setAttribute('draggable', true);
+                        cardsContainer.appendChild(card);
+                    });
+                </script>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        const cardsClass = document.querySelectorAll('.card');
+        const handsClass = document.querySelectorAll('.hand');
+
+        // Add drag event listeners to cards
+        cardsClass.forEach(card => {
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+        });
+
+        // Add drag event listeners to hand areas
+        handsClass.forEach(hand => {
+            hand.addEventListener('dragover', handleDragOver);
+            hand.addEventListener('drop', handleDrop);
+        });
+
+        function handleDragStart(e) {
+            e.dataTransfer.setData('text/plain', e.target.id);
+            this.classList.add('dragging');
+        }
+
+        function handleDragEnd() {
+            this.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault(); // Necessary to allow drop
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const cardId = e.dataTransfer.getData('text/plain');
+            const card = document.getElementById(cardId);
+
+            const handContainer = e.target.classList.contains('card') ? e.target.closest('.hand-container') : e.target.querySelector('.hand-container') || e.target;
+
+            // Clone the card element and add to the cards-container
+            const cardClone = card.cloneNode(true);
+            cardClone.onclick = function () { this.remove(); updateAction(); updateSplitButtonVisibility(e.target); };
+
+            // Find the cards-container within the hand
+            // const handContainer = e.target.querySelector('.hand-container') || e.target;
+            handContainer.appendChild(cardClone);
+
+            updateAction();
+            updateSplitButtonVisibility(e.target);
+        }
+
+        function splitHand(buttonElement) {
+            const handElement = buttonElement.parentNode;
+            const cards = handElement.querySelectorAll('.card');
+
+            if (cards.length === 2 && cards[0].textContent === cards[1].textContent) {
+                // Create a new hand container
+                const newHand = createHandContainer([cards[1]]);
+
+                // Append the new hand to the #hands container
+                const handsContainer = document.querySelector("#hands");
+                handsContainer.appendChild(newHand);
+
+                updateAction(); // Recalculate best action
+                updateSplitButtonVisibility(handElement);
+                updateSplitButtonVisibility(newHand);
+            }
+        }
+
+
+        function createHandContainer(cards) {
+            const newHand = document.createElement('div');
+            newHand.className = 'hand';
+
+            const actionText = document.createElement("div");
+            actionText.className = "action-text";
+            newHand.appendChild(actionText);
+
+            const handContainer = document.createElement('div');
+            handContainer.className = 'hand-container';
+            newHand.appendChild(handContainer);
+
+            if (cards != undefined) {
+                handContainer.appendChild(...cards);
+            }
+
+            const splitButton = document.createElement('button');
+            splitButton.className = 'split-btn';
+            splitButton.textContent = 'Split';
+            splitButton.style.display = 'none'; // Initially hidden
+            splitButton.onclick = function () { splitHand(this); };
+            newHand.appendChild(splitButton);
+
+            // Set up event listeners for the new hand
+            newHand.addEventListener('dragover', handleDragOver);
+            newHand.addEventListener('drop', function (e) {
+                handleDrop(e);
+                updateSplitButtonVisibility(newHand);
+            });
+
+            return newHand;
+        }
+
+        function updateSplitButtonVisibility(handElement) {
+            const cards = handElement.querySelectorAll('.card');
+            const splitBtn = handElement.querySelector('.split-btn');
+            if (splitBtn != undefined) {
+                if (cards.length === 2 && cards[0].textContent === cards[1].textContent) {
+                    splitBtn.style.display = 'inline-block';
+                } else {
+                    splitBtn.style.display = 'none';
+                }
+            }
+        }
+
+        function resetGame() {
+            const dealerHand = document.querySelector("#dealerHand");
+            const handsContainer = document.querySelector("#hands");
+            const action = document.querySelector("#action");
+
+            // Remove all cards from the dealer's hand
+            dealerHand.innerHTML = "";
+
+            // Remove all player hands and recreate the initial hand
+            handsContainer.innerHTML = '';
+            const initialHand = createHandContainer();
+            handsContainer.appendChild(initialHand);
+        }
+
+
+        function updateAction() {
+            const dealerCard = document.querySelector('#dealerHand .card')?.textContent;
+            const playerHands = document.querySelectorAll('#hands .hand');
+
+            playerHands.forEach(hand => {
+                if (hand.id !== 'dealerHand') {
+                    const playerCards = Array.from(hand.querySelectorAll('.card')).map(card => card.textContent);
+                    const actionText = hand.querySelector('.action-text');
+
+                    if (dealerCard && playerCards.length) {
+                        const action = calculateBestAction(dealerCard, playerCards);
+                        actionText.textContent = action;
+                    } else {
+                        actionText.textContent = '';
+                    }
+                }
+            });
+        }
+
+    </script>
+</body>
+
+</html>
